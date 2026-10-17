@@ -12,8 +12,18 @@ API_HASH = os.environ["TELEGRAM_API_HASH"]
 SESSION_STRING = os.environ["TELEGRAM_SESSION"]
 NTFY_TOPIC = os.environ["NTFY_TOPIC"]
 
-COURSE_NUMBERS = ["03940805-33", "03940806-20"]
+COURSES_FILE = Path("courses.txt")
 STATE_FILE = Path("state.json")
+
+
+def load_courses():
+    if not COURSES_FILE.exists():
+        return []
+    return [
+        line.strip()
+        for line in COURSES_FILE.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.strip().startswith("#")
+    ]
 
 
 def load_state():
@@ -27,6 +37,11 @@ def save_state(state):
 
 
 async def main():
+    course_numbers = load_courses()
+    if not course_numbers:
+        print("No courses configured in courses.txt")
+        return
+
     state = load_state()
 
     async with TelegramClient(
@@ -40,7 +55,7 @@ async def main():
 
             title = getattr(dialog.entity, "title", "") or ""
             course = next(
-                (c for c in COURSE_NUMBERS if c in title), None
+                (c for c in course_numbers if c in title), None
             )
 
             if not course:
